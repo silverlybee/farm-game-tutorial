@@ -9,16 +9,26 @@ public class PlotManager : MonoBehaviour
     SpriteRenderer plant;
     BoxCollider2D plantCollider;
 
-    public Sprite[] plantStages;
     int plantStage = 0;
-    float timeBtwStages = 2f;
     float timer;
+
+    public Color availableColor = Color.green;
+    public Color unavailableColor = Color.red;
+
+    SpriteRenderer plot;
+
+
+    PlantObject selectedPlant;
+
+    FarmManager fm;
 
     // Start is called before the first frame update
     void Start()
     {
         plant = transform.GetChild(0).GetComponent<SpriteRenderer>();
         plantCollider = transform.GetChild(0).GetComponent<BoxCollider2D>();
+        fm = transform.parent.GetComponent<FarmManager>();
+        plot = GetComponent<SpriteRenderer>();
     }
 
     // Update is called once per frame
@@ -28,9 +38,9 @@ public class PlotManager : MonoBehaviour
         {
             timer -= Time.deltaTime;
 
-            if (timer < 0 && plantStage<plantStages.Length-1)
+            if (timer < 0 && plantStage<selectedPlant.plantStages.Length-1)
             {
-                timer = timeBtwStages;
+                timer = selectedPlant.timeBtwStages;
                 plantStage++;
                 UpdatePlant();
             }
@@ -41,36 +51,64 @@ public class PlotManager : MonoBehaviour
     {
         if (isPlanted)
         {
-            if (plantStage == plantStages.Length - 1)
+            if (plantStage == selectedPlant.plantStages.Length - 1 && !fm.isPlanting)
             {
                 Harvest();
             }
         }
-        else
+        else if(fm.isPlanting && fm.selectPlant.plant.buyPrice <= fm.money)
         {
-            Plant();
+            Plant(fm.selectPlant.plant);
         }
 
     }
+
+    private void OnMouseOver()
+    {
+        if (fm.isPlanting)
+        {
+            if(isPlanted || fm.selectPlant.plant.buyPrice > fm.money)
+            {
+                //can't buy
+                plot.color = unavailableColor;
+            }
+            else
+            {
+                //can buy
+                plot.color = availableColor;
+            }
+        }
+    }
+
+    private void OnMouseExit()
+    {
+        plot.color = Color.white;
+    }
+
 
     void Harvest()
     {
         isPlanted = false;
         plant.gameObject.SetActive(false);
+        fm.Transaction(selectedPlant.sellPrice);
     }
 
-    void Plant()
+    void Plant(PlantObject newPlant)
     {
+        selectedPlant = newPlant;
         isPlanted = true;
+
+        fm.Transaction(-selectedPlant.buyPrice);
+
         plantStage = 0;
         UpdatePlant();
-        timer = timeBtwStages;
+        timer = selectedPlant.timeBtwStages;
         plant.gameObject.SetActive(true);
     }
 
     void UpdatePlant()
     {
-        plant.sprite = plantStages[plantStage];
+        plant.sprite = selectedPlant.plantStages[plantStage];
         plantCollider.size = plant.sprite.bounds.size;
         plantCollider.offset = new Vector2(0,plant.bounds.size.y/2);
     }
