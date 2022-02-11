@@ -1,2 +1,2 @@
-# farm-game-tutorial
+# Farm Game Tutorial
 Contains the assets for the farm game tutorial
